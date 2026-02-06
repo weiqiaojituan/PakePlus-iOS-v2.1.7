@@ -1,88 +1,456 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="./static/css/styles.css" />
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src * 'unsafe-inline' 'unsafe-eval'"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Tauri App</title>
-        <script src="./static/js/main.js"></script>
-    </head>
-    <body>
-        <main class="container">
-            <h1>Welcome to TauriMan</h1>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="white">
+  <title>气化调度查询</title>
+  <style>
+	:root {
+	  --main-blue: #0071e3;
+	  --main-gray: #f5f7fa;
+	  --deep-bg: #eef1f5;
+	  --card-bg: #ffffff;
+	  --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+	  --text-primary: #1d2129;
+	  --text-secondary: #606266;
+	  --text-tertiary: #909399;
+	  --border-light: #e5e6eb;
+	  --festival-color: #ff4848;
+	  /* 班次渐变：工业风低饱和 */
+	  --grad-早: linear-gradient(135deg, #36d198 0%, #20c997 100%);
+	  --grad-中: linear-gradient(135deg, #0071e3 0%, #0091ff 100%);
+	  --grad-夜: linear-gradient(135deg, #ff577f 0%, #ff4848 100%);
+	  --grad-休: linear-gradient(135deg, #c9cacc 0%, #b5b7ba 100%);
+	  --active-bg: #1d2129;
+	  --active-text: #ffffff;
+	  --nav-btn-bg: #f5f7fa;
+	  --nav-btn-hover: #eef1f5;
+	  --staff-bg: #f8f9fa;
+	  /* 自适应变量 */
+	  --gap-sm: clamp(6px, 2vw, 10px);
+	  --gap-md: clamp(10px, 3vw, 14px);
+	  --gap-lg: clamp(16px, 4vw, 24px);
+	  --radius-sm: clamp(8px, 2.5vw, 12px);
+	  --radius-md: clamp(12px, 3vw, 18px);
+	  --radius-lg: clamp(18px, 4vw, 32px);
+	  --btn-height: clamp(36px, 8vw, 48px);
+	  --cell-height: clamp(60px, 15vw, 80px);
+	}
 
-            <div class="row">
-                <a
-                    href="https://tauri.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="./assets/tauri.svg"
-                        class="logo tauri"
-                        alt="Tauri logo"
-                    />
-                </a>
-                <a
-                    href="https://pakeplus.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/app-icon.png"
-                        class="logo vanilla"
-                        alt="JavaScript logo"
-                    />
-                </a>
-            </div>
-            <p>Click to get data</p>
-            <form class="row" id="greet-form">
-                <input id="greet-input" placeholder="Enter a name..." />
-                <button type="submit" id="getdata">GET DATA</button>
-            </form>
-            <div class="functions">
-                <a href="./book.html" target="_self">跳转到book.html</a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >跳到百度blank
-                </a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_self"
-                    rel="noopener noreferrer"
-                >
-                    跳到百度self
-                </a>
-                <button onclick="sayHello()">点击我</button>
-                <button onclick="sayHello()">下载文件</button>
-                <button onclick="sayHello()">上传文件</button>
-                <button onclick="sayHello()">访问相机</button>
-                <button onclick="sayHello()">访问麦克风</button>
-                <button onclick="sayHello()">访问相册</button>
-                <button class="btn" onclick="openWechat()">打开微信</button>
-                <button class="btn" onclick="openWechatScan()">
-                    打开扫一扫
-                </button>
-                <button class="btn" onclick="openZhihu()">打开知乎</button>
-                <button onclick="sayHello()">打开抖音</button>
-                <button onclick="sayHello()">用浏览器打开</button>
-                <button>打开知乎</button>
-            </div>
-            <p id="greet-msg"></p>
-            <img src="./static/image/cursor.jpeg" alt="logo" />
-            <video
-                src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/docs/static/videos/pakeplus.mp4"
-                autoplay
-                controls
-                style="width: 100%; height: 100%"
-            ></video>
-            <audio src="./static/music/yin.mp3" controls></audio>
-        </main>
-    </body>
+	* { 
+	  margin: 0; 
+	  padding: 0; 
+	  box-sizing: border-box; 
+	  -webkit-tap-highlight-color: transparent; 
+	}
+	body { 
+	  background: var(--deep-bg); 
+	  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	  padding: clamp(10px, 3vw, 16px);
+	  color: var(--text-primary);
+	  min-height: 100vh;
+	  overflow-x: hidden;
+	  -webkit-overflow-scrolling: touch;
+	}
+
+	.mobile-wrapper {
+	  max-width: 480px; 
+	  width: 100%;
+	  margin: 0 auto;
+	  background: var(--card-bg);
+	  border-radius: var(--radius-lg);
+	  box-shadow: var(--card-shadow);
+	  padding: clamp(16px, 4vw, 24px);
+	  min-height: calc(100vh - clamp(20px, 6vw, 32px));
+	  display: flex;
+	  flex-direction: column;
+	  overflow: hidden;
+	}
+
+	header h1 { 
+	  font-size: clamp(1.2rem, 5vw, 1.5rem); 
+	  font-weight: 800; 
+	  text-align: center; 
+	  margin-bottom: var(--gap-lg); 
+	  color: var(--text-primary); 
+	  letter-spacing: -0.5px;
+	}
+
+	.team-picker {
+	  display: grid; 
+	  grid-template-columns: repeat(4, 1fr); 
+	  gap: var(--gap-sm); 
+	  margin-bottom: var(--gap-lg);
+	}
+	.team-item {
+	  height: var(--btn-height);
+	  line-height: var(--btn-height);
+	  padding: 0;
+	  border: none; 
+	  background: var(--main-gray);
+	  border-radius: var(--radius-md); 
+	  font-size: clamp(0.8rem, 3vw, 0.95rem); 
+	  font-weight: 600;
+	  color: var(--text-secondary); 
+	  transition: all 0.25s ease;
+	  cursor: pointer;
+	  min-width: 44px;
+	  min-height: 44px;
+	}
+	.team-item.active {
+	  background: var(--active-bg); 
+	  color: var(--active-text); 
+	  transform: scale(1.03);
+	  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+	.team-item:active {
+	  transform: scale(0.98);
+	}
+
+	.month-capsule {
+	  display: flex; 
+	  justify-content: space-between; 
+	  align-items: center;
+	  background: var(--main-gray); 
+	  border-radius: clamp(18px, 5vw, 24px); 
+	  padding: clamp(6px, 2vw, 8px); 
+	  margin-bottom: clamp(16px, 3.5vw, 22px);
+	}
+	.nav-btn {
+	  width: clamp(36px, 8vw, 42px); 
+	  height: clamp(36px, 8vw, 42px); 
+	  border-radius: var(--radius-md); 
+	  border: none;
+	  background: var(--nav-btn-bg); 
+	  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+	  font-size: clamp(1rem, 4vw, 1.2rem); 
+	  display: flex; 
+	  align-items: center; 
+	  justify-content: center;
+	  color: var(--text-primary);
+	  transition: background 0.2s;
+	  cursor: pointer;
+	}
+	.nav-btn:active { 
+	  background: var(--nav-btn-hover); 
+	  transform: scale(0.96);
+	}
+	.month-title { 
+	  font-weight: 700; 
+	  font-size: clamp(0.95rem, 3.5vw, 1.15rem); 
+	  color: var(--text-primary); 
+	  letter-spacing: 0.5px;
+	}
+
+	.cal-table { 
+	  width: 100%; 
+	  border-collapse: separate; 
+	  border-spacing: var(--gap-sm);
+	  flex: 1;
+	  table-layout: fixed;
+	}
+	.cal-table th { 
+	  font-size: clamp(0.75rem, 2.5vw, 0.85rem); 
+	  padding: clamp(8px, 2vw, 10px) 0; 
+	  color: var(--text-tertiary); 
+	  font-weight: 500;
+	  white-space: nowrap;
+	  text-align: center;
+	}
+	.cal-table td {
+	  height: var(--cell-height); 
+	  border-radius: var(--radius-md); 
+	  vertical-align: top;
+	  padding: clamp(6px, 2vw, 8px); 
+	  position: relative; 
+	  background: var(--main-gray);
+	  border: 1px solid var(--border-light);
+	  transition: all 0.2s;
+	  word-wrap: break-word;
+	}
+	.cal-table td:hover {
+	  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+	}
+	
+	.day-val { 
+	  font-size: clamp(0.95rem, 3.5vw, 1.1rem); 
+	  font-weight: 700; 
+	  color: var(--text-primary);
+	}
+	.lunar-val { 
+	  font-size: clamp(0.65rem, 2vw, 0.7rem); 
+	  color: var(--text-tertiary); 
+	  margin-top: clamp(1px, 0.5vw, 2px);
+	}
+	/* 节日文字样式单独标注，红色突出 */
+	.festival-val {
+	  font-size: clamp(0.65rem, 2vw, 0.7rem); 
+	  color: var(--festival-color); 
+	  margin-top: clamp(1px, 0.5vw, 2px);
+	  font-weight: 700;
+	}
+	
+	.shift-label {
+	  font-size: clamp(0.7rem, 2.5vw, 0.75rem); 
+	  text-align: center; 
+	  border-radius: var(--radius-sm);
+	  color: white; 
+	  padding: clamp(3px, 1vw, 4px) 0; 
+	  margin-top: clamp(4px, 1.5vw, 6px); 
+	  font-weight: 700;
+	  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+	  width: 100%;
+	}
+	.s-早 { background: var(--grad-早); }
+	.s-中 { background: var(--grad-中); }
+	.s-夜 { background: var(--grad-夜); }
+	.s-休 { background: var(--grad-休); color: #f5f5f5; }
+
+	.is-today { 
+	  background: var(--card-bg); 
+	  border: clamp(2px, 0.5vw, 2.5px) solid var(--main-blue) !important; 
+	  box-shadow: 0 0 clamp(15px, 4vw, 20px) rgba(0, 113, 227, 0.15);
+	}
+	.dim-cell { 
+	  opacity: 0.2; 
+	  filter: grayscale(0.8); 
+	  pointer-events: none; 
+	}
+
+	.staff-container {
+	  margin-top: var(--gap-lg); 
+	  padding: clamp(14px, 3.5vw, 20px); 
+	  background: var(--staff-bg); 
+	  border-radius: var(--radius-md);
+	  border: 1px solid var(--border-light);
+	  flex-shrink: 0;
+	}
+	.staff-group { 
+	  display: flex; 
+	  flex-wrap: wrap; 
+	  gap: var(--gap-sm); 
+	  align-items: center; 
+	  margin-bottom: clamp(8px, 2vw, 12px);
+	}
+	.staff-group:last-child { 
+	  margin-bottom: 0; 
+	}
+	.staff-badge {
+	  background: var(--active-bg); 
+	  color: var(--active-text); 
+	  font-size: clamp(0.7rem, 2.5vw, 0.75rem); 
+	  font-weight: 700;
+	  padding: clamp(3px, 1vw, 4px) clamp(8px, 2vw, 10px); 
+	  border-radius: var(--radius-sm); 
+	  min-width: clamp(40px, 10vw, 50px); 
+	  text-align: center;
+	  flex-shrink: 0;
+	}
+	.staff-names { 
+	  font-size: clamp(0.8rem, 2.8vw, 0.85rem); 
+	  color: var(--text-secondary); 
+	  font-weight: 500;
+	  flex: 1;
+	  word-wrap: break-word;
+	}
+  </style>
+</head>
+<body>
+
+<div class="mobile-wrapper">
+  <header><h1>气化倒班表</h1></header>
+  
+  <div class="team-picker" id="teamNav">
+	<button class="team-item" onclick="setTeam('甲班')">甲班</button>
+	<button class="team-item" onclick="setTeam('乙班')">乙班</button>
+	<button class="team-item" onclick="setTeam('丙班')">丙班</button>
+	<button class="team-item active" onclick="setTeam('丁班')">丁班</button>
+  </div>
+
+  <div class="month-capsule">
+	<button class="nav-btn" onclick="offsetMonth(-1)">❮</button>
+	<div class="month-title" id="monthLabel"></div>
+	<button class="nav-btn" onclick="offsetMonth(1)">❯</button>
+  </div>
+
+  <table class="cal-table">
+	<thead><tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr></thead>
+	<tbody id="calBody"></tbody>
+  </table>
+
+  <div class="staff-container" id="staffBox"></div>
+</div>
+
+<script>
+// 基础配置
+const BASE = new Date(2025, 8, 20); 
+const CYCLE = ['早', '早', '中', '中', '休', '夜', '夜', '休'];
+const TEAMS = {
+  '甲班': { offset: 2, members: '陈要、杨辉、黄计萍' },
+  '乙班': { offset: 4, members: '孙兴、李新建、谢红晴' },
+  '丙班': { offset: 6, members: '张木辰、张玉雷、韩丽丽' },
+  '丁班': { offset: 0, members: '张文宗、候小夜、冯欣' }
+};
+
+let curY = new Date().getFullYear();
+let curM = new Date().getMonth();
+let curT = '丁班';
+
+// 农历数据
+const L_DATA = [0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,0x06ca0,0x0b550,0x15355,0x04da0,0x0a5d0,0x14573,0x052d0,0x0a9a8,0x0e950,0x06aa0,0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b5a0,0x195a6,0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,0x05aa0,0x076a3,0x096d0,0x04bd7,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0];
+
+// 节日配置：公历(月-日)、农历(月-日)
+const FESTIVALS = {
+  solar: {
+	'1-1': '元旦',
+  },
+  lunar: {
+	'1-15': '元宵',
+	'5-5': '端午',
+	'8-15': '中秋',
+	'12-30': '除夕'
+  }
+};
+
+// 获取农历日期(月-日)
+function getLunarMD(y, m, d) {
+  let offset = (Date.UTC(y, m, d) - Date.UTC(1900, 0, 31)) / 86400000;
+  let i, leap = 0, temp = 0;
+  for (i = 1900; i < 2050 && offset > 0; i++) { temp = lYearDays(i); offset -= temp; }
+  if (offset < 0) { offset += temp; i--; }
+  let year = i; leap = getLeapMonth(year); let isLeap = false;
+  for (i = 1; i < 13 && offset > 0; i++) {
+	if (leap > 0 && i === (leap + 1) && !isLeap) { --i; isLeap = true; temp = getLeapDays(year); }
+	else { temp = getMonthDays(year, i); }
+	if (isLeap && i === (leap + 1)) isLeap = false;
+	offset -= temp;
+  }
+  if (offset < 0) { offset += temp; --i; }
+  const day = Math.floor(offset + 1);
+  return `${i}-${day}`;
+}
+
+// 获取农历年最后一天（除夕）
+function getLunarNewYearEve(y) {
+  const lastMonth = getLeapMonth(y) || 12;
+  const lastDay = getLeapMonth(y) === lastMonth ? getLeapDays(y) : getMonthDays(y, lastMonth);
+  return `${lastMonth}-${lastDay}`;
+}
+
+// 农历转换主函数
+function getLunar(y, m, d) {
+  let offset = (Date.UTC(y, m, d) - Date.UTC(1900, 0, 31)) / 86400000;
+  let i, leap = 0, temp = 0;
+  for (i = 1900; i < 2050 && offset > 0; i++) { temp = lYearDays(i); offset -= temp; }
+  if (offset < 0) { offset += temp; i--; }
+  let year = i; leap = getLeapMonth(year); let isLeap = false;
+  for (i = 1; i < 13 && offset > 0; i++) {
+	if (leap > 0 && i === (leap + 1) && !isLeap) { --i; isLeap = true; temp = getLeapDays(year); }
+	else { temp = getMonthDays(year, i); }
+	if (isLeap && i === (leap + 1)) isLeap = false;
+	offset -= temp;
+  }
+  if (offset < 0) { offset += temp; --i; }
+  const mNames = ["正月","二月","三月","四月","五月","六月","七月","八月","九月","十月","冬月","腊月"];
+  const dNames = ["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十","十一","十二","十三","十四","十五","十六","十七","十八","十九","二十","廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"];
+  return (Math.floor(offset + 1) === 1) ? mNames[i-1] : dNames[Math.floor(offset)];
+}
+
+// 农历工具函数
+function lYearDays(y) { let i, sum = 348; for (i = 0x8000; i > 0x8; i >>= 1) sum += (L_DATA[y-1900] & i) ? 1 : 0; return (sum + getLeapDays(y)); }
+function getLeapMonth(y) { return L_DATA[y-1900] & 0xf; }
+function getLeapDays(y) { return getLeapMonth(y) ? ((L_DATA[y-1900] & 0x10000) ? 30 : 29) : 0; }
+function getMonthDays(y, m) { return (L_DATA[y-1900] & (0x10000 >> m)) ? 30 : 29; }
+
+// 检查是否为节日，返回节日名称（无则返回空）
+function checkFestival(y, m, d) {
+  // 检查公历节日
+  const solarMD = `${m+1}-${d}`;
+  if (FESTIVALS.solar[solarMD]) return FESTIVALS.solar[solarMD];
+  // 检查农历节日（含除夕自动适配）
+  const lunarMD = getLunarMD(y, m, d);
+  const lunarEve = getLunarNewYearEve(y);
+  if (lunarMD === lunarEve) return '除夕';
+  if (FESTIVALS.lunar[lunarMD]) return FESTIVALS.lunar[lunarMD];
+  // 非节日返回空
+  return '';
+}
+
+// 班组切换
+function setTeam(name) {
+  curT = name;
+  document.querySelectorAll('.team-item').forEach(b => b.classList.toggle('active', b.innerText === name));
+  render();
+}
+
+// 月份翻页
+function offsetMonth(n) {
+  curM += n; 
+  if (curM > 11) { curM = 0; curY++; } 
+  else if (curM < 0) { curM = 11; curY--; }
+  render();
+}
+
+// 核心渲染（节日替换农历显示）
+function render() {
+  const body = document.getElementById('calBody');
+  document.getElementById('monthLabel').innerText = `${curY}年${curM + 1}月`;
+  body.innerHTML = '';
+  const first = new Date(curY, curM, 1);
+  const startDay = first.getDay();
+  let cursor = new Date(curY, curM, 1 - startDay);
+  let rowCount = 0;
+
+  while (cursor.getMonth() === curM || rowCount < 1) {
+	let tr = document.createElement('tr');
+	for (let j = 0; j < 7; j++) {
+	  const td = document.createElement('td');
+	  const curDate = cursor.getDate();
+	  const curCY = cursor.getFullYear();
+	  const curCM = cursor.getMonth();
+	  const curCD = curDate;
+	  
+	  if (curCM !== curM) { 
+		td.className = 'dim-cell'; 
+	  } else {
+		// 标记今日
+		if (new Date().getFullYear() === curCY && new Date().getMonth() === curCM && new Date().getDate() === curCD) {
+		  td.className = 'is-today';
+		}
+		// 检查节日
+		const festivalName = checkFestival(curCY, curCM, curCD);
+		// 获取农历/节日文字
+		const lunarText = getLunar(curCY, curCM, curCD);
+		const showText = festivalName || lunarText;
+		// 文字样式（节日红色加粗，普通农历灰色）
+		const textClass = festivalName ? 'festival-val' : 'lunar-val';
+
+		// 计算倒班
+		const diff = Math.floor((new Date(cursor).setHours(0,0,0,0) - new Date(BASE).setHours(0,0,0,0)) / 86400000);
+		const shift = CYCLE[(((diff + TEAMS[curT].offset) % 8) + 8) % 8];
+
+		// 渲染内容：节日直接替换农历位置，无额外标签
+		td.innerHTML = `<div class="day-val">${curDate}</div><div class="${textClass}">${showText}</div><div class="shift-label s-${shift}">${shift}</div>`;
+	  }
+	  tr.appendChild(td);
+	  cursor.setDate(cursor.getDate() + 1);
+	}
+	body.appendChild(tr);
+	rowCount++;
+	if (rowCount >= 6) break;
+  }
+}
+
+// 初始化
+(function init() {
+  const staff = document.getElementById('staffBox');
+  for (let k in TEAMS) {
+	staff.innerHTML += `<div class="staff-group"><span class="staff-badge">${k}</span><span class="staff-names">${TEAMS[k].members}</span></div>`;
+  }
+  setTimeout(() => render(), 100);
+})();
+</script>
+</body>
 </html>

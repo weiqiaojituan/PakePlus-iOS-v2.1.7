@@ -1,88 +1,303 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="./static/css/styles.css" />
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src * 'unsafe-inline' 'unsafe-eval'"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Tauri App</title>
-        <script src="./static/js/main.js"></script>
-    </head>
-    <body>
-        <main class="container">
-            <h1>Welcome to TauriMan</h1>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PID 模拟器 - 刘飞制作</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { background:#0b1219; color:#adbac7; font-family:sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+  .card { background:#1c2128; border:1px solid #30363d; border-radius:12px; padding:10px; position:relative; }
+  .lcd { font-family: 'Courier New', monospace; font-weight: bold; }
+  .tab-active { background: #1f6feb; color: white; border-color: #58a6ff; }
+  input[type=range] { -webkit-appearance: none; width: 100%; height: 6px; background: #30363d; border-radius: 3px; outline: none; margin: 12px 0; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #58a6ff; border: 2px solid #fff; }
+  .best-ref-box { font-size: 10px; color: #d29922; font-weight: bold; background: rgba(210, 153, 34, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px dashed #d29922; }
+  .scroll-v { overflow-y: auto; flex: 1; padding: 10px; padding-bottom: 140px; }
+  .bottom-bar { position: fixed; bottom: 0; width: 100%; background: #0b1219; padding: 10px 15px 25px 15px; border-top: 1px solid #30363d; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body class="p-2 space-y-2">
 
-            <div class="row">
-                <a
-                    href="https://tauri.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="./assets/tauri.svg"
-                        class="logo tauri"
-                        alt="Tauri logo"
-                    />
-                </a>
-                <a
-                    href="https://pakeplus.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/app-icon.png"
-                        class="logo vanilla"
-                        alt="JavaScript logo"
-                    />
-                </a>
-            </div>
-            <p>Click to get data</p>
-            <form class="row" id="greet-form">
-                <input id="greet-input" placeholder="Enter a name..." />
-                <button type="submit" id="getdata">GET DATA</button>
-            </form>
-            <div class="functions">
-                <a href="./book.html" target="_self">跳转到book.html</a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >跳到百度blank
-                </a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_self"
-                    rel="noopener noreferrer"
-                >
-                    跳到百度self
-                </a>
-                <button onclick="sayHello()">点击我</button>
-                <button onclick="sayHello()">下载文件</button>
-                <button onclick="sayHello()">上传文件</button>
-                <button onclick="sayHello()">访问相机</button>
-                <button onclick="sayHello()">访问麦克风</button>
-                <button onclick="sayHello()">访问相册</button>
-                <button class="btn" onclick="openWechat()">打开微信</button>
-                <button class="btn" onclick="openWechatScan()">
-                    打开扫一扫
-                </button>
-                <button class="btn" onclick="openZhihu()">打开知乎</button>
-                <button onclick="sayHello()">打开抖音</button>
-                <button onclick="sayHello()">用浏览器打开</button>
-                <button>打开知乎</button>
-            </div>
-            <p id="greet-msg"></p>
-            <img src="./static/image/cursor.jpeg" alt="logo" />
-            <video
-                src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/docs/static/videos/pakeplus.mp4"
-                autoplay
-                controls
-                style="width: 100%; height: 100%"
-            ></video>
-            <audio src="./static/music/yin.mp3" controls></audio>
-        </main>
-    </body>
+<header class="text-center py-1 bg-[#161b22] rounded-lg border border-gray-800 flex-none">
+  <h1 class="text-gray-200 text-sm font-bold tracking-[0.3em] uppercase">PID 模拟器</h1>
+</header>
+
+<nav class="flex gap-2 p-1 bg-[#0d1117] rounded-xl border border-gray-800 flex-none">
+  <button onclick="switchMode('temp')" id="btn-temp" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all tab-active">蒸汽减温系统</button>
+  <button onclick="switchMode('level')" id="btn-level" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all text-gray-500">液位控制系统</button>
+</nav>
+
+<section class="grid grid-cols-12 gap-2 flex-none">
+  <div class="col-span-4 card flex flex-col items-center justify-center border-t-2 border-blue-500">
+	<div id="best-display" class="absolute top-2 left-2 text-[8px] text-yellow-500/80 leading-tight">计算中...</div>
+	<div class="text-blue-400 text-2xl lcd mt-2" id="pv-lcd">450.0</div>
+	<div class="text-[9px] text-gray-500 mt-1 uppercase" id="pv-label">Temp PV (℃)</div>
+	<div class="w-full bg-black h-1 mt-3 rounded-full overflow-hidden">
+	  <div id="pv-bar" class="h-full bg-blue-500" style="width: 50%"></div>
+	</div>
+  </div>
+  <div class="col-span-8 card p-1"><canvas id="mainChart"></canvas></div>
+</section>
+
+<section class="grid grid-cols-3 gap-2 flex-none text-center">
+  <div class="card border-l-4 border-red-500 py-1"><div class="text-[8px] text-gray-400">设定 SP</div><div id="sp-lcd" class="text-red-500 text-lg lcd">450.0</div></div>
+  <div class="card border-l-4 border-yellow-500 py-1"><div class="text-[8px] text-gray-400">实际阀位</div><div id="act-lcd" class="text-yellow-500 text-lg lcd">60.0%</div></div>
+  <div class="card border-l-4 border-green-500 py-1"><div class="text-[8px] text-gray-400">输出 MV</div><div id="mv-lcd" class="text-green-500 text-lg lcd">60.0%</div></div>
+</section>
+
+<div class="scroll-v space-y-4">
+  <div class="space-y-3">
+	<h2 class="text-[10px] text-gray-500 font-bold ml-1 tracking-widest uppercase">PID 参数控制</h2>
+	
+	<div class="card">
+	  <div class="flex justify-between items-center mb-1">
+		<span class="text-xs font-bold">PB (比例带)</span>
+		<div class="flex gap-2 items-center">
+		  <span class="best-ref-box" id="ref-pb">Ref: --</span>
+		  <span class="bg-gray-900 text-blue-400 px-2 py-1 rounded lcd text-xs" id="pb-val">60</span>
+		</div>
+	  </div>
+	  <input type="range" id="pb-in" min="10" max="200" value="60" oninput="update('pb', this.value)">
+	</div>
+
+	<div class="card">
+	  <div class="flex justify-between items-center mb-1">
+		<span class="text-xs font-bold">TI (积分秒)</span>
+		<div class="flex gap-2 items-center">
+		  <span class="best-ref-box" id="ref-ti">Ref: --</span>
+		  <span class="bg-gray-900 text-green-400 px-2 py-1 rounded lcd text-xs" id="ti-val">40s</span>
+		</div>
+	  </div>
+	  <input type="range" id="ti-in" min="5" max="200" value="40" oninput="update('ti', this.value)">
+	</div>
+
+	<div class="card">
+	  <div class="flex justify-between items-center mb-1">
+		<span class="text-xs font-bold">TD (微分秒)</span>
+		<div class="flex gap-2 items-center">
+		  <span class="best-ref-box" id="ref-td">Ref: --</span>
+		  <span class="bg-gray-900 text-purple-400 px-2 py-1 rounded lcd text-xs" id="td-val">10s</span>
+		</div>
+	  </div>
+	  <input type="range" id="td-in" min="0" max="20" value="10" oninput="update('td', this.value)">
+	</div>
+  </div>
+
+  <div class="space-y-3">
+	<h2 class="text-[10px] text-gray-500 font-bold ml-1 uppercase">过程特性控制</h2>
+	<div class="card">
+	  <div class="flex justify-between text-xs mb-1"><span>阀门全行程时间</span><span id="vspeed-val" class="text-white">30s</span></div>
+	  <input type="range" id="vspeed-in" min="1" max="120" value="30" oninput="update('vspeed', this.value)">
+	</div>
+	<div class="card">
+	  <div class="flex justify-between text-xs mb-1"><span>管道纯滞后时间</span><span id="dt-val" class="text-white">4s</span></div>
+	  <input type="range" id="dt-in" min="0" max="20" step="0.5" value="4" oninput="update('dt', this.value)">
+	</div>
+	<!-- 温度专属参数（默认显示，液位模式隐藏） -->
+	<div id="temp-only" class="space-y-3">
+		<div class="card border-l-2 border-purple-500">
+		  <div class="flex justify-between text-xs mb-1 text-purple-400"><span>温度惯性系数</span><span id="inertia-val" class="text-white">0.5</span></div>
+		  <input type="range" id="inertia-in" min="0.1" max="0.9" step="0.1" value="0.5" oninput="update('inertia', this.value)">
+		</div>
+		<div class="card border-l-2 border-red-500">
+		  <div class="flex justify-between text-xs mb-1 text-red-400"><span>升温速度 (℃/s)</span><span id="heatRate-val" class="text-white">0.1</span></div>
+		  <!-- 升温速度量程改为 0.1~3.0℃/s -->
+		  <input type="range" id="heatRate-in" min="0.1" max="3.0" step="0.1" value="0.1" oninput="update('heatRate', this.value)">
+		</div>
+		<div class="card border-l-2 border-blue-500">
+		  <div class="flex justify-between text-xs mb-1 text-blue-400"><span>降温速度 (℃/s)</span><span id="coolRate-val" class="text-white">0.2</span></div>
+		  <!-- 降温速度量程改为 0.1~3.0℃/s -->
+		  <input type="range" id="coolRate-in" min="0.1" max="3.0" step="0.1" value="0.2" oninput="update('coolRate', this.value)">
+		</div>
+	</div>
+	<!-- 液位专属参数（默认隐藏，液位模式显示） -->
+	<div id="level-only" class="space-y-3 hidden">
+		<div class="card border-l-2 border-cyan-500">
+		  <div class="flex justify-between text-xs mb-1 text-cyan-400"><span>液位上升速度 (%/10s)</span><span id="levelUp-val" class="text-white">0.1</span></div>
+		  <input type="range" id="levelUp-in" min="0.01" max="2.0" step="0.01" value="0.1" oninput="update('levelUp', this.value)">
+		</div>
+		<div class="card border-l-2 border-orange-500">
+		  <div class="flex justify-between text-xs mb-1 text-orange-400"><span>液位下降速度 (%/10s)</span><span id="levelDown-val" class="text-white">0.1</span></div>
+		  <input type="range" id="levelDown-in" min="0.01" max="2.0" step="0.01" value="0.1" oninput="update('levelDown', this.value)">
+		</div>
+	</div>
+	<div class="card">
+	  <div class="flex justify-between text-xs mb-1 text-red-400"><span>设定目标 SP</span><span id="sp-val" class="text-white">450</span></div>
+	  <input type="range" id="sp-in" min="350" max="600" value="450" oninput="update('sp', this.value)">
+	</div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <div class="flex gap-2">
+	<button onclick="toggle()" id="runBtn" class="flex-1 bg-blue-600 py-3 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-transform">开始仿真</button>
+	<button onclick="location.reload()" class="w-1/4 bg-gray-800 py-3 rounded-xl text-sm text-gray-400 text-center">重置</button>
+  </div>
+  <div class="text-center text-[10px] text-gray-600 tracking-widest mt-1">
+	模拟器仅供参考学习 制作人: 刘飞
+  </div>
+</div>
+
+<script>
+let mode = 'temp';
+let s = {
+  pv: 450, sp: 450, mv: 60, actMV: 60, integral: 0, lastPv: 450, processVal: 450, delayQueue: [],
+  p: { 
+	pb: 60, ti: 40, td: 10, vspeed: 30, dt: 4.0, load: 60,
+	heatRate:0.1, coolRate:0.2, inertia:0.5,
+	levelUp:0.1, levelDown:0.1
+  },
+  log: { pv: [], sp: [], act: [] }, isRunning: false
+};
+
+let chart;
+const dt = 0.1; // 仿真步长(秒)
+const TEN_SEC_STEPS=10/dt; // 10秒对应的仿真步数
+
+function initChart() {
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  chart = new Chart(ctx, {
+	type: 'line',
+	data: { labels: Array(100).fill(''), datasets: [
+	  { label: 'PV', data: [], borderColor: '#58a6ff', borderWidth: 2, pointRadius: 0, tension: 0.1 },
+	  { label: 'SP', data: [], borderColor: '#f85149', borderWidth: 1, borderDash: [3,3], pointRadius: 0 },
+	  { label: 'Valve', data: [], borderColor: '#fbbf2433', backgroundColor: '#fbbf2411', fill: true, borderWidth: 1, pointRadius: 0, yAxisID: 'y1' }
+	]},
+	options: {
+	  responsive: true, maintainAspectRatio: false, animation: false,
+	  scales: {
+		y: { min: 350, max: 600, grid: { color: '#2a2e35' }, ticks: { font: {size: 8}, color: '#8b949e' } },
+		y1: { position: 'right', min: 0, max: 100, display: false },
+		x: { display: false }
+	  },
+	  plugins: { legend: { display: false } }
+	}
+  });
+}
+
+function switchMode(m) {
+  mode = m;
+  const tempOnly=document.getElementById('temp-only');
+  const levelOnly=document.getElementById('level-only');
+  const btnTemp=document.getElementById('btn-temp');
+  const btnLevel=document.getElementById('btn-level');
+  const pvLabel=document.getElementById('pv-label');
+  const spIn=document.getElementById('sp-in');
+
+  btnTemp.className = `flex-1 py-2 rounded-lg text-xs font-bold transition-all ${m==='temp'?'tab-active':'text-gray-500'}`;
+  btnLevel.className = `flex-1 py-2 rounded-lg text-xs font-bold transition-all ${m==='level'?'tab-active':'text-gray-500'}`;
+  
+  if(m === 'temp') {
+	tempOnly.classList.remove('hidden');
+	levelOnly.classList.add('hidden');
+	s.pv = 450; s.sp = 450; s.processVal = 450;
+	pvLabel.innerText = "Temp PV (℃)";
+	spIn.min = 350; spIn.max = 600;
+	chart.options.scales.y.min = 350; chart.options.scales.y.max = 600;
+  } else {
+	tempOnly.classList.add('hidden');
+	levelOnly.classList.remove('hidden');
+	s.pv = 50; s.sp = 50; s.processVal = 50;
+	pvLabel.innerText = "Level PV (%)";
+	spIn.min = 0; spIn.max = 100;
+	chart.options.scales.y.min = 0; chart.options.scales.y.max = 100;
+  }
+  s.integral = 0;
+  s.log.pv = []; s.log.sp = []; s.log.act = [];
+  update('sp', s.sp);
+  autoCalcPID();
+  chart.update('none');
+}
+
+function autoCalcPID() {
+  const L = s.p.dt + (s.p.vspeed * 0.15); 
+  const T = mode === 'temp' ? 40 : 80;    
+  const K = mode === 'temp' ? 1.5 : 0.5;  
+  let bestPB, bestTI, bestTD;
+  if(mode === 'temp') {
+	bestPB = Math.round(70 * (L/T + 0.5));
+	bestTI = Math.round(2 * L + T * 0.1);
+	bestTD = Math.round(0.4 * L);
+  } else {
+	bestPB = Math.round(40 * (L/T + 1.2));
+	bestTI = Math.round(3 * L + 10);
+	bestTD = Math.round(0.2 * L);
+  }
+  document.getElementById('ref-pb').innerText = `Ref: ${bestPB}`;
+  document.getElementById('ref-ti').innerText = `Ref: ${bestTI}s`;
+  document.getElementById('ref-td').innerText = `Ref: ${bestTD}s`;
+  document.getElementById('best-display').innerHTML = `最佳参考:<br>PB:${bestPB} TI:${bestTI} TD:${bestTD}`;
+}
+
+function update(id, val) {
+  let v=parseFloat(val);
+  if(id === 'sp') s.sp=v; else if(s.p.hasOwnProperty(id)) s.p[id] = v;
+  let unit = '';
+  if(['dt','vspeed','ti','td'].includes(id)) unit = 's';
+  document.getElementById(id + '-val').innerText=v + unit;
+  if(id === 'sp') document.getElementById('sp-lcd').innerText=v.toFixed(1);
+  autoCalcPID();
+}
+
+function calculate() {
+  const p=s.p;
+  let Kp=100/p.pb;
+  let err=mode === 'temp' ? (s.pv-s.sp) : (s.sp-s.pv);
+  if (!((s.mv >= 100 && err > 0) || (s.mv <= 0 && err < 0))) s.integral += (Kp/p.ti)*err*dt;
+  let dTerm=Kp*p.td*(s.pv-s.lastPv)/dt;
+  s.mv=Math.max(0, Math.min(100, (Kp*err+s.integral+(mode==='temp'?dTerm:-dTerm))+p.load));
+  let maxStep=(100/p.vspeed)*dt;
+  let diff=s.mv-s.actMV;
+  s.actMV += Math.abs(diff) > maxStep ? Math.sign(diff)*maxStep : diff;
+  s.delayQueue.push(s.actMV);
+  let dSteps=Math.max(1, Math.floor(p.dt/dt));
+  while(s.delayQueue.length > dSteps) s.effMV=s.delayQueue.shift();
+  s.lastPv=s.pv;
+
+  if(mode === 'temp') {
+	let valDiff=p.load-(s.effMV||s.actMV);
+	let rate=valDiff > 0 ? p.heatRate : Math.abs(valDiff) > 0 ? p.coolRate : 0;
+	let targetVal=s.processVal+valDiff*rate*dt;
+	targetVal=Math.max(350, Math.min(600, targetVal));
+	s.processVal=p.inertia*s.processVal+(1-p.inertia)*targetVal;
+  } else {
+	let valDiff=(s.effMV||s.actMV)-p.load;
+	let upRate=p.levelUp/TEN_SEC_STEPS;
+	let downRate=p.levelDown/TEN_SEC_STEPS;
+	let stepRate=valDiff > 0 ? upRate : Math.abs(valDiff) > 0 ? downRate : 0;
+	s.processVal += valDiff*stepRate;
+	s.processVal=Math.max(0, Math.min(100, s.processVal));
+  }
+
+  s.pv=s.processVal+(Math.random()-0.5)*0.1;
+  updateUI();
+}
+
+function updateUI() {
+  document.getElementById('pv-lcd').innerText=s.pv.toFixed(1);
+  document.getElementById('act-lcd').innerText=s.actMV.toFixed(1) + '%';
+  document.getElementById('mv-lcd').innerText=s.mv.toFixed(1) + '%';
+  let barH=mode === 'temp' ? (s.pv-350)/(600-350)*100 : s.pv;
+  document.getElementById('pv-bar').style.width=Math.min(100, Math.max(0, barH)) + '%';
+  s.log.pv.push(s.pv); s.log.sp.push(s.sp); s.log.act.push(s.actMV);
+  if(s.log.pv.length > 100) { s.log.pv.shift(); s.log.sp.shift(); s.log.act.shift(); }
+  chart.data.datasets[0].data=s.log.pv;
+  chart.data.datasets[1].data=s.log.sp;
+  chart.data.datasets[2].data=s.log.act;
+  chart.update('none');
+}
+
+function toggle() {
+  s.isRunning = !s.isRunning;
+  const btn=document.getElementById('runBtn');
+  btn.innerText=s.isRunning ? "暂停运行" : "开始仿真";
+  btn.style.background=s.isRunning ? "#991b1b" : "#2563eb";
+  if(s.isRunning) timer=setInterval(calculate, 100); else clearInterval(timer);
+}
+window.onload = () => { initChart(); switchMode('temp'); };
+</script>
+</body>
 </html>
